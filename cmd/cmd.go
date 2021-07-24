@@ -20,8 +20,28 @@ import (
 const linkFilename = ".wnfs-sync"
 
 func open(ctx context.Context) (wnfs.WNFS, *ExternalState) {
+	ipfsPath := os.Getenv("IPFS_PATH")
+	if ipfsPath == "" {
+		dir, err := configDirPath()
+		if err != nil {
+			errExit("error: getting configuration directory: %s\n", err)
+		}
+		ipfsPath = filepath.Join(dir, "ipfs")
+
+		if _, err := os.Stat(filepath.Join(ipfsPath, "config")); os.IsNotExist(err) {
+			if err := os.MkdirAll(ipfsPath, 0755); err != nil {
+				errExit("error: creating ipfs repo: %s\n", err)
+			}
+			fmt.Printf("creating ipfs repo at %s ... ", ipfsPath)
+			if err = wnipfs.InitRepo(ipfsPath, ""); err != nil {
+				errExit("\nerror: %s", err)
+			}
+			fmt.Println("done")
+		}
+	}
+
 	store, err := wnipfs.NewFilesystem(ctx, map[string]interface{}{
-		"path": os.Getenv("IPFS_PATH"),
+		"path": ipfsPath,
 	})
 
 	if err != nil {
@@ -57,16 +77,11 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fsys, state := open(ctx)
-
-	updateExternalState := func() {
-		state.RootCID = fsys.(mdstore.DagNode).Cid()
-		if err := state.Write(); err != nil {
-			errExit("error: writing external state: %s\n", err)
-		}
-		fmt.Println("snapshot created")
-		fmt.Printf("new root CID: %s\n", state.RootCID)
-	}
+	var (
+		fsys                wnfs.WNFS
+		state               *ExternalState
+		updateExternalState func()
+	)
 
 	app := &cli.App{
 		Flags: []cli.Flag{
@@ -81,6 +96,17 @@ func main() {
 			if c.Bool("verbose") {
 				golog.SetLogLevel("wnfs", "debug")
 			}
+
+			fsys, state = open(ctx)
+			updateExternalState = func() {
+				state.RootCID = fsys.(mdstore.DagNode).Cid()
+				fmt.Printf("writing root cid: %s...", state.RootCID)
+				if err := state.Write(); err != nil {
+					errExit("error: writing external state: %s\n", err)
+				}
+				fmt.Println("done")
+			}
+
 			return nil
 		},
 		Commands: []*cli.Command{
