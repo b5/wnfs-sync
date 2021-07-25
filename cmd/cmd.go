@@ -281,11 +281,7 @@ func writeSnapshot(fsys wnfs.WNFS, local fs.FS, wnfsPath, localPath string, delt
 			if len(d.Deltas) == 0 {
 				p := filepath.Join(localPath, d.Name)
 				fmt.Printf("writing %s\n", p)
-				f, err := local.Open(p)
-				if err != nil {
-					return err
-				}
-				if err := fsys.Write(filepath.Join(wnfsPath, d.Name), f, wnfs.MutationOptions{Commit: true}); err != nil {
+				if err := fsys.Cp(filepath.Join(wnfsPath, d.Name), p, local, wnfs.MutationOptions{Commit: true}); err != nil {
 					return err
 				}
 				continue

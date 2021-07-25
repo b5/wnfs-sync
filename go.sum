@@ -1270,8 +1270,8 @@ github.com/prometheus/statsd_exporter v0.20.0/go.mod h1:YL3FWCG8JBBtaUSxAg4Gz2ZY
 github.com/qri-io/go-ipfs-http-client v0.0.6-0.20200623125303-7a2eee881baa/go.mod h1:1+V9y6ZICu/bZiq9QRa/l77H6seb2sgcQYeELQAhZ24=
 github.com/qri-io/qfs v0.6.0 h1:Av7jD8srhxPfT7Be+BuKt6lbFHeu3c7D9MjfHhuEQFk=
 github.com/qri-io/qfs v0.6.0/go.mod h1:SU+DUq8+BfHNod1SXzmD8FrNLgPt42aKyQuO3fnFEQI=
-github.com/qri-io/wnfs-go v0.0.0-20210724170901-7bb1ce542219 h1:TerWijxIA4YvbVglg+jGKKCl1QUHrDblIytFPO9vqkw=
-github.com/qri-io/wnfs-go v0.0.0-20210724170901-7bb1ce542219/go.mod h1:E0Qtmzs9GwoAaNpCN5MHELrgv7xgNHDpzw37L8fGfHk=
+github.com/qri-io/wnfs-go v0.0.0-20210725045611-b42455a97dd4 h1:mdUZ+UMwiQK2FSuXhDNOEW1+S1Li4t7QUS6N6xaItc8=
+github.com/qri-io/wnfs-go v0.0.0-20210725045611-b42455a97dd4/go.mod h1:E0Qtmzs9GwoAaNpCN5MHELrgv7xgNHDpzw37L8fGfHk=
 github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rogpeppe/fastuuid v0.0.0-20150106093220-6724a57986af/go.mod h1:XWv6SoW27p1b0cqNHllgS5HIMJraePCO15w5zCzIWYg=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
