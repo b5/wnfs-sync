@@ -43,6 +43,10 @@ func (d Delta) String() string {
 	return fmt.Sprintf("%s %s", d.Type, d.Name)
 }
 
+func (d Delta) Changed() bool {
+	return d.Type != DTUnchanged
+}
+
 func Tree(aPath, bPath string, afs, bfs fs.FS, ignore ...string) (*Delta, error) {
 	changes := &Delta{Type: DTUnchanged, Name: "."}
 	ignoreMap := map[string]struct{}{}
@@ -141,14 +145,14 @@ func diffDirectoryFiles(aPath, bPath string, a, b fs.File, afs, bfs fs.FS, chang
 		return err
 	}
 
-	// calculate the LCS between aFiles & bFiles, assumes filenames are sorted
-	// and all filenames are unique
-	common := make(map[string]fs.DirEntry, len(aFiles))
+	// calculate the set intersection between aFiles & bFiles, assumes filenames
+	// are sorted and all filenames are unique
+	aFilesMap := make(map[string]fs.DirEntry, len(aFiles))
 	for _, f := range aFiles {
 		if _, ok := ignore[f.Name()]; ok {
 			continue
 		}
-		common[f.Name()] = f
+		aFilesMap[f.Name()] = f
 	}
 
 	for _, bFile := range bFiles {
@@ -157,8 +161,8 @@ func diffDirectoryFiles(aPath, bPath string, a, b fs.File, afs, bfs fs.FS, chang
 			continue
 		}
 
-		_, found := common[name]
-		if !found {
+		if _, foundInA := aFilesMap[name]; !foundInA {
+			// file is missing in a, exists in b, mark as added
 			changes.Type = DTChange
 			changes.Deltas = append(changes.Deltas,
 				&Delta{Type: DTAdd, Name: name},
@@ -166,6 +170,7 @@ func diffDirectoryFiles(aPath, bPath string, a, b fs.File, afs, bfs fs.FS, chang
 			continue
 		}
 
+		// file exists in both b & a
 		aChPath := filepath.Join(aPath, name)
 		bChPath := filepath.Join(bPath, name)
 		childChanges := &Delta{Name: name}
@@ -173,33 +178,26 @@ func diffDirectoryFiles(aPath, bPath string, a, b fs.File, afs, bfs fs.FS, chang
 		if err := tree(aChPath, bChPath, afs, bfs, childChanges, ignore); err != nil {
 			return err
 		}
+		if childChanges.Changed() {
+			changes.Type = DTChange
+		}
 		changes.Deltas = append(changes.Deltas, childChanges)
 
-		// remove matched file from common map
-		delete(common, bFile.Name())
+		// remove matched file from a files map
+		delete(aFilesMap, name)
 	}
 
-	// everything left in the common map is a removal
-	for name := range common {
+	if len(aFilesMap) > 0 {
 		changes.Type = DTChange
-		changes.Deltas = append(changes.Deltas,
-			&Delta{Type: DTRemove, Name: name},
-		)
+		// everything left in the common map is a removal
+		for name := range aFilesMap {
+			changes.Deltas = append(changes.Deltas,
+				&Delta{Type: DTRemove, Name: name},
+			)
+		}
 	}
 
 	return nil
-}
-
-func fileFS(f fs.File) (fs.FS, error) {
-	fi, err := f.Stat()
-	if err != nil {
-		return nil, err
-	}
-	fsys, ok := fi.Sys().(fs.FS)
-	if !ok {
-		return nil, errors.New("root file does not provide access to underlying filesystem")
-	}
-	return fsys, nil
 }
 
 func readComplete(r io.Reader, b []byte) (int, error) {
