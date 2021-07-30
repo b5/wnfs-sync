@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	fsdiff "github.com/b5/wnfs-sync/fsdiff"
+	"github.com/dustin/go-humanize"
 	"github.com/ipfs/go-cid"
 	golog "github.com/ipfs/go-log"
 	wnfs "github.com/qri-io/wnfs-go"
@@ -215,6 +217,24 @@ func main() {
 
 					for _, entry := range entries {
 						fmt.Println(entry.Name())
+					}
+					return nil
+				},
+			},
+			{
+				Name:    "log",
+				Aliases: []string{"history"},
+				Usage:   "show the history of a path",
+				Action: func(c *cli.Context) error {
+					entries, err := fsys.History(c.Args().Get(0), -1)
+					if err != nil {
+						return err
+					}
+
+					fmt.Println("date\tsize\tcid")
+					for _, entry := range entries {
+						ts := time.Unix(entry.Metadata.UnixMeta.Mtime, 0)
+						fmt.Printf("%s\t%s\t%s\n", ts.Format(time.RFC3339), humanize.Bytes(uint64(entry.Size)), entry.Cid)
 					}
 					return nil
 				},
